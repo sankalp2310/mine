@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pendant Wall</title>
-<meta name="description" content="Five attached pendant frames with left gold heart & visible chain, calm glass flow, floating hearts over frames, and looping music. Portrait shows a rotate prompt." />
+<meta name="description" content="Five attached pendant frames with a tilted gold heart on the boundary and a real gold chain kept outside the frame, calm single-flow glass effect, floating hearts, and looping music. Portrait shows rotate prompt." />
 <style>
   :root{
     /* Sunset palette */
@@ -12,7 +12,6 @@
 
     /* Metals / accent */
     --gold1:#ffe29a; --gold2:#ffbe5f; --gold3:#fff4c9;
-    --rose:#ff9cc5;
 
     /* Glass tones */
     --glass1:rgba(255,255,255,.28);
@@ -24,13 +23,12 @@
     --gap-y: 0;
 
     /* === Uniform margins (same on all sides) === */
-    --pad-x: 18px;          /* left & right */
-    --pad-y: var(--pad-x);  /* top & bottom equal to sides */
+    --pad-x: 18px;            /* left & right */
+    --pad-y: var(--pad-x);    /* top & bottom = sides */
 
-    /* Heart/chain placement */
-    --heart-left: -2px;     /* keep the heart just outside, still fully visible */
-    --heart-tipY: 50%;      /* where the heart point touches the edge */
-    --chain-left: -14px;    /* chain slightly outside but visible */
+    /* Heart placement (tilted, pinned on boundary) */
+    --heart-tipY: 50%;        /* vertical position where heart tip touches edge (0–100%) */
+    --heart-nudge-x: -1px;    /* tiny nudge to sit exactly on boundary */
 
     /* Music button size (tiny) */
     --music-size: 32px;
@@ -56,7 +54,7 @@
 
   /* Floating hearts OVER the frames too */
   .hearts{
-    position:fixed; inset:0; z-index:9; pointer-events:none; overflow:hidden;
+    position:fixed; inset:0; z-index:12; pointer-events:none; overflow:hidden;
     transform: translate3d(0,0,0);
     transition: transform .08s linear;
   }
@@ -71,7 +69,7 @@
     100%{ transform:translateY(-110vh) translateX(var(--drift,0)) scale(1.05); opacity:0; }
   }
 
-  /* 5 attached rows with equal margins all around */
+  /* The 5-row wall (each row is a container so we can keep the chain outside the frame) */
   .screen{
     position:relative; z-index:2;
     height:100dvh; width:100vw;
@@ -80,15 +78,32 @@
     grid-template-rows: repeat(5, 1fr);
     gap: var(--gap-y);
   }
-
-  /* Frame (no radius -> rows attach seamlessly) */
-  .pendant{
+  .row{
     position:relative; width:100%; height:100%;
+    /* This row contains the chain (outside) and the pendant (filling the row) */
+  }
+
+  /* Real gold chain: sibling of the pendant, anchored to the left boundary, entirely outside the frame */
+  .row .chain{
+    position:absolute;
+    right: 100%;                /* anchor the chain's right edge to the row's left edge */
+    top: 50%;
+    transform: translate(6px, -50%) rotate(-16deg); /* slight overlap to meet the heart */
+    width: 160px; height: 70px; /* chain render box */
+    z-index:3;                  /* under the pendant so it never appears over the frame */
+    pointer-events:none;
+  }
+  .row .chain svg{ width:100%; height:100%; display:block; }
+
+  /* Pendant frame fills the row */
+  .pendant{
+    position:absolute; inset:0;
     border-radius:0;
     background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
     box-shadow:var(--shadow);
-    overflow:visible; /* show left heart/chain outside */
+    overflow:visible; /* show the heart peeking out on the edge */
     isolation:isolate;
+    z-index:5;       /* above the chain so chain never sits on top of frame */
   }
 
   /* Bezel */
@@ -109,7 +124,7 @@
 
   /* ===== CALM GLASS "WATER FLOW" — single, slow pattern ===== */
   .glass{
-    position:absolute; inset:0; z-index:3; pointer-events:none;
+    position:absolute; inset:0; z-index:6; pointer-events:none;
     /* Base reflection + light refraction */
     background:
       radial-gradient(130% 80% at -20% -15%, rgba(255,255,255,.18), rgba(255,255,255,0) 55%),
@@ -144,52 +159,26 @@
   .glow{
     position:absolute; left:0; right:0; bottom:0; height:38%;
     background:linear-gradient(180deg, transparent, rgba(0,0,0,.16), rgba(0,0,0,.26));
-    z-index:5; pointer-events:none;
+    z-index:6; pointer-events:none;
   }
 
-  /* ===== Left GOLD HEART (heart only) + visible chain ===== */
+  /* ===== Left GOLD HEART (SVG, tilted) pinned on boundary ===== */
   .heart-pin{
     position:absolute;
     top: var(--heart-tipY);
-    left: 0;
-    transform: translate(var(--heart-left), -50%);
-    width: 22px; height: 26px;
-    z-index:8; pointer-events:none;
+    left: 0;                 /* attach to the left frame edge */
+    transform: translate(var(--heart-nudge-x), -50%);
+    z-index:10;              /* above glass/bezel */
+    pointer-events:none;
   }
-  /* Gold heart: two lobes + bottom point; bottom point touches the edge */
-  .heart-pin .heart{
-    position:absolute; left:-2px; top: calc(50% - 10px); /* align bottom with edge */
-    width:18px; height:16px;
+  .gold-heart{
+    position:absolute;
+    left: 0; top: 50%;
+    width: 22px; height: 20px;
+    transform-box: fill-box;
+    transform-origin: 50% 90%;
+    transform: translate(-10px, -18px) rotate(-12deg); /* slight tilt */
     filter: drop-shadow(0 3px 6px rgba(0,0,0,.3));
-  }
-  .heart-pin .heart::before,
-  .heart-pin .heart::after{
-    content:""; position:absolute; width:10px; height:10px; border-radius:50%;
-    background: radial-gradient(circle at 35% 35%, var(--gold3), var(--gold1) 55%, var(--gold2) 100%);
-    top:0;
-  }
-  .heart-pin .heart::before{ left:0; }
-  .heart-pin .heart::after{ right:0; }
-  .heart-pin .heart i{
-    position:absolute; left:50%; top:4px; transform:translateX(-50%) rotate(45deg);
-    width:10px; height:10px;
-    background: radial-gradient(circle at 40% 40%, var(--gold3), var(--gold1) 55%, var(--gold2) 100%);
-  }
-  /* Pink‑gold chain — closer so it's clearly visible */
-  .heart-pin .chain{
-    position:absolute; left: var(--chain-left); top:50%;
-    transform: translateY(-50%) rotate(-18deg);
-    width:10px; height:90px;
-  }
-  .heart-pin .chain::before{
-    content:""; position:absolute; left:0; top:0; width:10px; height:10px; border-radius:50%;
-    background: radial-gradient(circle at 45% 45%, #ffe9f0, var(--rose) 55%, #ffb46b 100%);
-    box-shadow:
-      -16px  0   0 0 rgba(255,183,205,1),
-      -32px  0   0 0 rgba(255,183,205,1),
-      -48px  0   0 0 rgba(255,183,205,1),
-      -64px  0   0 0 rgba(255,183,205,1);
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
   }
 
   /* ===== Tiny Play/Pause button — bottom-right ===== */
@@ -198,7 +187,7 @@
     right: max(8px, env(safe-area-inset-right, 8px));
     bottom: max(8px, env(safe-area-inset-bottom, 8px));
     width: var(--music-size); height: var(--music-size);
-    z-index:10; pointer-events:auto;
+    z-index:30; pointer-events:auto;
   }
   .music button{
     width: 100%; height: 100%;
@@ -218,7 +207,7 @@
 
   /* ===== Portrait safeguard: show rotate prompt; hide gallery to avoid cropping ===== */
   .rotate-overlay{
-    position:fixed; inset:0; z-index:20; display:none;
+    position:fixed; inset:0; z-index:40; display:none;
     align-items:center; justify-content:center; flex-direction:column;
     gap:12px; color:#fff;
     background: linear-gradient(135deg, rgba(0,0,0,.35), rgba(0,0,0,.25));
@@ -238,8 +227,8 @@
   @media (orientation: portrait){
     .rotate-overlay{ display:flex; }
     .screen{ display:none; }     /* don’t crop rows in portrait */
-    .hearts{ display:none; }     /* keep it calm in the prompt */
-    .music{ display:none; }      /* tiny control hidden until landscape */
+    .hearts{ display:none; }
+    .music{ display:none; }
   }
 </style>
 </head>
@@ -250,7 +239,7 @@
 <!-- Hearts float over frames -->
 <div class="hearts" aria-hidden="true"></div>
 
-<!-- 5 attached pendants -->
+<!-- 5 attached rows (each row holds chain + pendant) -->
 <section class="screen" id="screen"></section>
 
 <!-- Tiny bottom-right music button -->
@@ -261,7 +250,7 @@
 <!-- Rotate prompt in portrait -->
 <div class="rotate-overlay" id="rotate">
   <div class="icon">🔁📱</div>
-  <div class="hint">Please rotate your phone to <strong>landscape</strong> for the full view.</div>
+  <div class="hint">Meera, phone ghuma landscape mode m 🫠</div>
 </div>
 
 <!-- Looping background music -->
@@ -280,6 +269,39 @@ const SONG   = 'song.mp3';
 const screenEl = document.getElementById('screen');
 
 IMAGES.forEach((file, idx) => {
+  // Row container (so chain can be outside the frame)
+  const row = document.createElement('div');
+  row.className = 'row';
+
+  // Real gold chain (sibling) — anchored outside the left boundary
+  const chain = document.createElement('div');
+  chain.className = 'chain';
+  chain.innerHTML = `
+    <svg viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="gChain" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"  stop-color="#ffcf76"/>
+          <stop offset="50%" stop-color="#ffb84d"/>
+          <stop offset="100%" stop-color="#f3a23c"/>
+        </linearGradient>
+        <linearGradient id="gChainHi" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"  stop-color="rgba(255,255,255,.55)"/>
+          <stop offset="40%" stop-color="rgba(255,255,255,.25)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+        </linearGradient>
+      </defs>
+      <!-- Main chain curve (kept outside; meets the heart near the boundary) -->
+      <path d="M156,24 C130,6 98,42 70,26 C44,12 26,24 6,20"
+            fill="none" stroke="url(#gChain)" stroke-width="4.2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Soft highlight -->
+      <path d="M156,21 C130,4 98,39 71,24 C45,11 27,22 7,18"
+            fill="none" stroke="url(#gChainHi)" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+    </svg>
+  `;
+
+  // Pendant frame (fills row)
   const card = document.createElement('article');
   card.className = 'pendant';
 
@@ -289,23 +311,40 @@ IMAGES.forEach((file, idx) => {
   img.loading = 'eager'; img.decoding = 'async';
   img.src = ASSET_BASE + file;
 
-  /* Calm glass flow + depth glow (no gold shimmer) */
   const glass = document.createElement('div'); glass.className = 'glass';
-  const glow = document.createElement('div'); glow.className = 'glow';
+  const glow  = document.createElement('div'); glow.className  = 'glow';
 
-  /* Left gold heart (only heart) + visible chain */
+  // Gold heart pinned on the boundary
   const pin = document.createElement('div'); pin.className = 'heart-pin';
-  const heart = document.createElement('div'); heart.className = 'heart';
-  const heartDiamond = document.createElement('i'); heart.appendChild(heartDiamond);
-  const chain= document.createElement('div'); chain.className = 'chain';
-  pin.appendChild(heart); pin.appendChild(chain);
+  pin.insertAdjacentHTML('beforeend', `
+    <svg class="gold-heart" viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="gGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"  stop-color="#fff4c9"/>
+          <stop offset="55%" stop-color="#ffe29a"/>
+          <stop offset="100%" stop-color="#ffbe5f"/>
+        </linearGradient>
+      </defs>
+      <path d="M10 18
+               L1.5 9.5
+               A4.5 4.5 0 1 1 8 3.5
+               L10 5.7
+               L12 3.5
+               A4.5 4.5 0 1 1 18.5 9.5
+               Z"
+            fill="url(#gGold)"/>
+    </svg>
+  `);
 
+  // Assemble row
+  row.appendChild(chain);     // outside, under the frame
   card.appendChild(img);
   card.appendChild(glass);
   card.appendChild(glow);
-  card.appendChild(pin);
+  card.appendChild(pin);      // heart on boundary
+  row.appendChild(card);
 
-  screenEl.appendChild(card);
+  screenEl.appendChild(row);
 });
 
 /* ----------------- FLOATING HEARTS (over frames) + PARALLAX ------------------ */
