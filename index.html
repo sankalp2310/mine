@@ -22,16 +22,13 @@
     /* No vertical gap between rows (they touch) */
     --gap-y: 0;
 
-    /* Uniform margins (same top/bottom/left/right) */
+    /* Uniform margins (same on all sides) */
     --pad-x: 18px;
     --pad-y: var(--pad-x);
 
     /* Heart placement (tilted, pinned on boundary) */
     --heart-tipY: 50%;
     --heart-nudge-x: -1px;
-
-    /* Tiny Play/Pause button */
-    --music-size: 32px;
   }
 
   *{ box-sizing:border-box; }
@@ -163,30 +160,6 @@
     filter: drop-shadow(0 3px 6px rgba(0,0,0,.3));
   }
 
-  /* Tiny Play/Pause button — bottom-right */
-  .music{
-    position:fixed;
-    right: max(8px, env(safe-area-inset-right, 8px));
-    bottom: max(8px, env(safe-area-inset-bottom, 8px));
-    width: var(--music-size); height: var(--music-size);
-    z-index:30; pointer-events:auto;
-  }
-  .music button{
-    width: 100%; height: 100%;
-    appearance:none; border:1px solid rgba(255,255,255,.55);
-    background: linear-gradient(180deg, var(--glass1), var(--glass2));
-    backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%);
-    border-radius: 999px;
-    color:#fff; font-size: 13px; font-weight:900; line-height:1;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 8px 20px rgba(0,0,0,.28);
-    cursor:pointer;
-  }
-
-  @media (max-width:430px){
-    :root{ --music-size: 30px; }
-  }
-
   /* Portrait: show rotate prompt; hide gallery to avoid cropping */
   .rotate-overlay{
     position:fixed; inset:0; z-index:40; display:none;
@@ -209,7 +182,6 @@
     .rotate-overlay{ display:flex; }
     .screen{ display:none; }
     .hearts{ display:none; }
-    .music{ display:none; }
   }
 </style>
 </head>
@@ -223,15 +195,10 @@
 <!-- 5 attached pendants -->
 <section class="screen" id="screen"></section>
 
-<!-- Tiny bottom-right music button -->
-<div class="music" id="music">
-  <button id="musicBtn" type="button" aria-label="Play/Pause">▶</button>
-</div>
-
 <!-- Rotate prompt in portrait -->
 <div class="rotate-overlay" id="rotate">
   <div class="icon">🔁📱</div>
-  <div class="hint">Meera, phone ghuma landscape mode m 🫠</div>
+  <div class="hint">Meera, phn ghooma landscape mode m aur volume bada</div>
 </div>
 
 <!-- Looping background music: autoplay with sound -->
@@ -343,69 +310,48 @@ startHearts();
   }, {passive:true});
 })();
 
-/* ------------------ LOOPING AUTOPLAY MUSIC (sound on) ------------------ */
+/* ------------------ LOOPING AUTOPLAY MUSIC (sound on; no pause UI) ------------------ */
 const audio = document.getElementById('bgm');
 audio.src    = ASSET_BASE + SONG;
 audio.loop   = true;
 audio.volume = 1.0;
 audio.muted  = false;
 
-const btn = document.getElementById('musicBtn');
-let userPaused = false;   // only the button sets this
-
-function isAudible(){
-  return !audio.paused && !audio.muted && (audio.volume > 0.01);
-}
-function setBtn(){
-  btn.textContent = isAudible() ? '⏸' : '▶';
-}
+/* try to play with sound */
+async function playNow(){ try{ await audio.play(); return true; }catch{ return false; } }
 
 /* Strong autoplay attempts:
    - immediate with sound
    - short retry loop
-   - when canplay/canplaythrough/playing fire, confirm
    - visibility/focus recovery
    - one-time first gesture (start only; never pause)
 */
-async function playNow(){ try{ await audio.play(); return true; }catch{ return false; } }
-
 async function enforceAutoplaySound(){
-  // Immediate attempt
-  if (await playNow()) setBtn();
+  // 1) Immediate attempt
+  await playNow();
 
-  // Retry a few times (helps when decode finishes just after)
+  // 2) Short retry loop
   let tries = 0, maxTries = 8;
   const timer = setInterval(async ()=>{
-    if (!userPaused && audio.paused){
-      if (await playNow()) { setBtn(); clearInterval(timer); }
+    if (audio.paused){
+      if (await playNow()) { clearInterval(timer); }
     } else {
       clearInterval(timer);
     }
     if (++tries >= maxTries) clearInterval(timer);
   }, 350);
 
-  // Keep button state synced to audible state
-  ['playing','pause','volumechange','loadeddata','canplay','canplaythrough','stalled','suspend','abort']
-    .forEach(ev => audio.addEventListener(ev, setBtn));
-
-  // Visibility/focus hooks (never pause)
+  // 3) Visibility/focus hooks (never pause)
   const vis = async ()=>{
-    if (userPaused) return;
-    if (audio.paused){
-      if (await playNow()) setBtn();
-    } else {
-      setBtn();
-    }
+    if (audio.paused){ await playNow(); }
   };
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) vis(); });
   window.addEventListener('pageshow', vis);
   window.addEventListener('focus', vis);
 
-  // First user gesture (one-time) → start if still blocked; NEVER pauses
+  // 4) First user gesture (one-time) → start if still blocked; NEVER pauses
   const onceStart = async ()=>{
-    if (!userPaused && audio.paused){
-      if (await playNow()) setBtn();
-    }
+    if (audio.paused){ await playNow(); }
     window.removeEventListener('pointerdown', onceStart);
     window.removeEventListener('touchstart', onceStart);
     window.removeEventListener('keydown', onceStart);
@@ -415,25 +361,9 @@ async function enforceAutoplaySound(){
   window.addEventListener('keydown',     onceStart);
 }
 
-/* Button is the ONLY control that pauses/resumes */
-btn.addEventListener('click', async ()=>{
-  try{
-    if (isAudible()){
-      userPaused = true;
-      try{ audio.pause(); }catch{}
-      setBtn();
-    }else{
-      userPaused = false;
-      if (await playNow()) setBtn();
-    }
-  }catch{}
-});
-
 /* Loop fallback */
 audio.addEventListener('ended', async ()=>{
-  if (!userPaused){
-    try{ audio.currentTime = 0; await audio.play(); }catch{}
-  }
+  try{ audio.currentTime = 0; await audio.play(); }catch{}
 });
 
 /* Build & kick attempts ASAP */
@@ -442,6 +372,9 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 } else {
   document.addEventListener('DOMContentLoaded', enforceAutoplaySound);
 }
+
+/* Keep the page to a single screen (no scroll) */
+window.addEventListener('touchmove', (e)=>{ e.preventDefault(); }, {passive:false});
 </script>
 </body>
 </html>
