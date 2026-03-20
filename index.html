@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pendant Wall</title>
-<meta name="description" content="Five attached pendant frames with a tilted gold heart on the boundary, calm single-flow glass effect, floating hearts, and looping music with a tiny bottom-right button. Portrait shows a rotate prompt." />
+<meta name="description" content="Five attached pendant frames with a tilted gold heart, calm glass flow, floating hearts, and looping music that autoplays with sound. Portrait shows a rotate prompt." />
 <style>
   :root{
     /* Sunset palette */
@@ -22,7 +22,7 @@
     /* No vertical gap between rows (they touch) */
     --gap-y: 0;
 
-    /* Uniform margins (same on all sides) */
+    /* Uniform margins (same top/bottom/left/right) */
     --pad-x: 18px;
     --pad-y: var(--pad-x);
 
@@ -48,7 +48,7 @@
   /* Subtle film grain */
   .grain{
     position:fixed; inset:0; z-index:0; pointer-events:none;
-    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" /></filter><rect width="100%" height="100%" filter="url(#n)" opacity="0.05"/></svg>');
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" /></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.05"/></svg>');
     background-size:180px 180px; mix-blend-mode:soft-light;
   }
 
@@ -239,7 +239,7 @@
 
 <script>
 /* -------------------- CONFIG -------------------- */
-const ASSET_BASE = '';                 // e.g., 'assets/' if you keep files there
+const ASSET_BASE = '';   // e.g., 'assets/' if you keep files there
 const IMAGES = ['Image_1.jpg','Image_2.jpg','Image_3.jpg','Image_4.jpg','Image_5.jpg'];
 const SONG   = 'song.mp3';
 
@@ -345,9 +345,9 @@ startHearts();
 
 /* ------------------ LOOPING AUTOPLAY MUSIC (sound on) ------------------ */
 const audio = document.getElementById('bgm');
-audio.src   = ASSET_BASE + SONG;
-audio.loop  = true;
-audio.volume = 1.0;      // we start with sound
+audio.src    = ASSET_BASE + SONG;
+audio.loop   = true;
+audio.volume = 1.0;
 audio.muted  = false;
 
 const btn = document.getElementById('musicBtn');
@@ -360,39 +360,39 @@ function setBtn(){
   btn.textContent = isAudible() ? '⏸' : '▶';
 }
 
-/* try to play with sound */
-async function hardPlay(){ try{ await audio.play(); return true; }catch{ return false; } }
-
-/* Start attempts:
-   - immediate attempt
+/* Strong autoplay attempts:
+   - immediate with sound
    - short retry loop
-   - ensure on playing/visibility/focus
-   - one-time first gesture = start if needed
+   - when canplay/canplaythrough/playing fire, confirm
+   - visibility/focus recovery
+   - one-time first gesture (start only; never pause)
 */
-async function enforceAutoplaySound(){
-  // 1) immediate
-  if (await hardPlay()) setBtn();
+async function playNow(){ try{ await audio.play(); return true; }catch{ return false; } }
 
-  // 2) short retry loop (helps after buffering/decoding completes)
-  let tries = 0, maxTries = 6;
+async function enforceAutoplaySound(){
+  // Immediate attempt
+  if (await playNow()) setBtn();
+
+  // Retry a few times (helps when decode finishes just after)
+  let tries = 0, maxTries = 8;
   const timer = setInterval(async ()=>{
     if (!userPaused && audio.paused){
-      if (await hardPlay()) { setBtn(); clearInterval(timer); }
+      if (await playNow()) { setBtn(); clearInterval(timer); }
     } else {
       clearInterval(timer);
     }
     if (++tries >= maxTries) clearInterval(timer);
-  }, 400);
+  }, 350);
 
-  // 3) keep button state synced
+  // Keep button state synced to audible state
   ['playing','pause','volumechange','loadeddata','canplay','canplaythrough','stalled','suspend','abort']
     .forEach(ev => audio.addEventListener(ev, setBtn));
 
-  // 4) visibility/focus recovery (never pauses)
+  // Visibility/focus hooks (never pause)
   const vis = async ()=>{
     if (userPaused) return;
     if (audio.paused){
-      if (await hardPlay()) setBtn();
+      if (await playNow()) setBtn();
     } else {
       setBtn();
     }
@@ -401,10 +401,10 @@ async function enforceAutoplaySound(){
   window.addEventListener('pageshow', vis);
   window.addEventListener('focus', vis);
 
-  // 5) first user gesture (one-time) → start if still blocked; NEVER pauses
+  // First user gesture (one-time) → start if still blocked; NEVER pauses
   const onceStart = async ()=>{
     if (!userPaused && audio.paused){
-      if (await hardPlay()) setBtn();
+      if (await playNow()) setBtn();
     }
     window.removeEventListener('pointerdown', onceStart);
     window.removeEventListener('touchstart', onceStart);
@@ -424,7 +424,7 @@ btn.addEventListener('click', async ()=>{
       setBtn();
     }else{
       userPaused = false;
-      if (await hardPlay()) setBtn();
+      if (await playNow()) setBtn();
     }
   }catch{}
 });
@@ -436,7 +436,7 @@ audio.addEventListener('ended', async ()=>{
   }
 });
 
-/* Kick attempts ASAP */
+/* Build & kick attempts ASAP */
 if (document.readyState === 'complete' || document.readyState === 'interactive'){
   enforceAutoplaySound();
 } else {
