@@ -4,16 +4,16 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pendant Wall</title>
-<meta name="description" content="Five attached pendant frames with a tilted gold heart on the boundary and a real gold chain kept outside the frame, calm single-flow glass effect, floating hearts, and looping music. Portrait shows rotate prompt." />
+<meta name="description" content="Five attached pendant frames with a tilted gold heart on the boundary, calm single-flow glass effect, floating hearts, and looping music with a tiny bottom-right button. Portrait shows a rotate prompt." />
 <style>
   :root{
     /* Sunset palette */
     --sunset-1:#ff9a9e; --sunset-2:#fad0c4; --sunset-3:#fbc2eb; --sunset-4:#a18cd1;
 
-    /* Metals / accent */
+    /* Metals */
     --gold1:#ffe29a; --gold2:#ffbe5f; --gold3:#fff4c9;
 
-    /* Glass tones */
+    /* Glass */
     --glass1:rgba(255,255,255,.28);
     --glass2:rgba(255,255,255,.12);
 
@@ -22,15 +22,15 @@
     /* No vertical gap between rows (they touch) */
     --gap-y: 0;
 
-    /* === Uniform margins (same on all sides) === */
-    --pad-x: 18px;            /* left & right */
-    --pad-y: var(--pad-x);    /* top & bottom = sides */
+    /* Uniform margins (same on all sides) */
+    --pad-x: 18px;
+    --pad-y: var(--pad-x);
 
     /* Heart placement (tilted, pinned on boundary) */
-    --heart-tipY: 50%;        /* vertical position where heart tip touches edge (0–100%) */
-    --heart-nudge-x: -1px;    /* tiny nudge to sit exactly on boundary */
+    --heart-tipY: 50%;
+    --heart-nudge-x: -1px;
 
-    /* Music button size (tiny) */
+    /* Tiny Play/Pause button */
     --music-size: 32px;
   }
 
@@ -52,7 +52,7 @@
     background-size:180px 180px; mix-blend-mode:soft-light;
   }
 
-  /* Floating hearts OVER the frames too */
+  /* Floating hearts (over frames) */
   .hearts{
     position:fixed; inset:0; z-index:12; pointer-events:none; overflow:hidden;
     transform: translate3d(0,0,0);
@@ -69,7 +69,7 @@
     100%{ transform:translateY(-110vh) translateX(var(--drift,0)) scale(1.05); opacity:0; }
   }
 
-  /* The 5-row wall (each row is a container so we can keep the chain outside the frame) */
+  /* 5 attached rows with equal margins all around */
   .screen{
     position:relative; z-index:2;
     height:100dvh; width:100vw;
@@ -78,32 +78,16 @@
     grid-template-rows: repeat(5, 1fr);
     gap: var(--gap-y);
   }
-  .row{
-    position:relative; width:100%; height:100%;
-    /* This row contains the chain (outside) and the pendant (filling the row) */
-  }
 
-  /* Real gold chain: sibling of the pendant, anchored to the left boundary, entirely outside the frame */
-  .row .chain{
-    position:absolute;
-    right: 100%;                /* anchor the chain's right edge to the row's left edge */
-    top: 50%;
-    transform: translate(6px, -50%) rotate(-16deg); /* slight overlap to meet the heart */
-    width: 160px; height: 70px; /* chain render box */
-    z-index:3;                  /* under the pendant so it never appears over the frame */
-    pointer-events:none;
-  }
-  .row .chain svg{ width:100%; height:100%; display:block; }
-
-  /* Pendant frame fills the row */
+  /* Frame */
   .pendant{
-    position:absolute; inset:0;
+    position:relative; width:100%; height:100%;
     border-radius:0;
     background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
     box-shadow:var(--shadow);
-    overflow:visible; /* show the heart peeking out on the edge */
+    overflow:visible; /* show the heart peeking outside the edge */
     isolation:isolate;
-    z-index:5;       /* above the chain so chain never sits on top of frame */
+    z-index:5;
   }
 
   /* Bezel */
@@ -122,10 +106,9 @@
     z-index:1;
   }
 
-  /* ===== CALM GLASS "WATER FLOW" — single, slow pattern ===== */
+  /* Calm glass water flow (single pattern) */
   .glass{
     position:absolute; inset:0; z-index:6; pointer-events:none;
-    /* Base reflection + light refraction */
     background:
       radial-gradient(130% 80% at -20% -15%, rgba(255,255,255,.18), rgba(255,255,255,0) 55%),
       linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
@@ -133,7 +116,6 @@
     backdrop-filter: blur(1px) saturate(1.05) brightness(1.03);
     -webkit-backdrop-filter: blur(1px) saturate(1.05) brightness(1.03);
   }
-  /* Single gentle streak band moving across (one pattern, calm) */
   .glass::before{
     content:""; position:absolute; inset:-10% -22%;
     background:
@@ -162,7 +144,7 @@
     z-index:6; pointer-events:none;
   }
 
-  /* ===== Left GOLD HEART (SVG, tilted) pinned on boundary ===== */
+  /* Left GOLD HEART (SVG, tilted) pinned on boundary */
   .heart-pin{
     position:absolute;
     top: var(--heart-tipY);
@@ -181,7 +163,7 @@
     filter: drop-shadow(0 3px 6px rgba(0,0,0,.3));
   }
 
-  /* ===== Tiny Play/Pause button — bottom-right ===== */
+  /* Tiny Play/Pause button — bottom-right */
   .music{
     position:fixed;
     right: max(8px, env(safe-area-inset-right, 8px));
@@ -205,7 +187,7 @@
     :root{ --music-size: 30px; }
   }
 
-  /* ===== Portrait safeguard: show rotate prompt; hide gallery to avoid cropping ===== */
+  /* Portrait: show rotate prompt; hide gallery to avoid cropping */
   .rotate-overlay{
     position:fixed; inset:0; z-index:40; display:none;
     align-items:center; justify-content:center; flex-direction:column;
@@ -223,10 +205,9 @@
   .rotate-overlay .hint{
     font-size: 14px; opacity:.95;
   }
-
   @media (orientation: portrait){
     .rotate-overlay{ display:flex; }
-    .screen{ display:none; }     /* don’t crop rows in portrait */
+    .screen{ display:none; }
     .hearts{ display:none; }
     .music{ display:none; }
   }
@@ -239,7 +220,7 @@
 <!-- Hearts float over frames -->
 <div class="hearts" aria-hidden="true"></div>
 
-<!-- 5 attached rows (each row holds chain + pendant) -->
+<!-- 5 attached pendants -->
 <section class="screen" id="screen"></section>
 
 <!-- Tiny bottom-right music button -->
@@ -259,8 +240,7 @@
 <script>
 /* -------------------- CONFIG -------------------- */
 const ASSET_BASE = '';
-// For GitHub RAW, e.g.:
-// const ASSET_BASE = 'https://raw.githubusercontent.com/<user>/<repo>/<branch>/path/';
+// If you use an assets folder, set: const ASSET_BASE = 'assets/';
 
 const IMAGES = ['Image_1.jpg','Image_2.jpg','Image_3.jpg','Image_4.jpg','Image_5.jpg'];
 const SONG   = 'song.mp3';
@@ -269,39 +249,6 @@ const SONG   = 'song.mp3';
 const screenEl = document.getElementById('screen');
 
 IMAGES.forEach((file, idx) => {
-  // Row container (so chain can be outside the frame)
-  const row = document.createElement('div');
-  row.className = 'row';
-
-  // Real gold chain (sibling) — anchored outside the left boundary
-  const chain = document.createElement('div');
-  chain.className = 'chain';
-  chain.innerHTML = `
-    <svg viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="gChain" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"  stop-color="#ffcf76"/>
-          <stop offset="50%" stop-color="#ffb84d"/>
-          <stop offset="100%" stop-color="#f3a23c"/>
-        </linearGradient>
-        <linearGradient id="gChainHi" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"  stop-color="rgba(255,255,255,.55)"/>
-          <stop offset="40%" stop-color="rgba(255,255,255,.25)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-        </linearGradient>
-      </defs>
-      <!-- Main chain curve (kept outside; meets the heart near the boundary) -->
-      <path d="M156,24 C130,6 98,42 70,26 C44,12 26,24 6,20"
-            fill="none" stroke="url(#gChain)" stroke-width="4.2"
-            stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- Soft highlight -->
-      <path d="M156,21 C130,4 98,39 71,24 C45,11 27,22 7,18"
-            fill="none" stroke="url(#gChainHi)" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
-    </svg>
-  `;
-
-  // Pendant frame (fills row)
   const card = document.createElement('article');
   card.className = 'pendant';
 
@@ -311,10 +258,11 @@ IMAGES.forEach((file, idx) => {
   img.loading = 'eager'; img.decoding = 'async';
   img.src = ASSET_BASE + file;
 
+  /* Calm glass flow + depth glow (no shimmer) */
   const glass = document.createElement('div'); glass.className = 'glass';
   const glow  = document.createElement('div'); glow.className  = 'glow';
 
-  // Gold heart pinned on the boundary
+  /* Gold heart (SVG, tilted) pinned on boundary */
   const pin = document.createElement('div'); pin.className = 'heart-pin';
   pin.insertAdjacentHTML('beforeend', `
     <svg class="gold-heart" viewBox="0 0 20 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -336,15 +284,12 @@ IMAGES.forEach((file, idx) => {
     </svg>
   `);
 
-  // Assemble row
-  row.appendChild(chain);     // outside, under the frame
   card.appendChild(img);
   card.appendChild(glass);
   card.appendChild(glow);
-  card.appendChild(pin);      // heart on boundary
-  row.appendChild(card);
+  card.appendChild(pin);
 
-  screenEl.appendChild(row);
+  screenEl.appendChild(card);
 });
 
 /* ----------------- FLOATING HEARTS (over frames) + PARALLAX ------------------ */
@@ -402,44 +347,39 @@ startHearts();
   }, {passive:true});
 })();
 
-/* ------------------ LOOPING AUTOPLAY MUSIC + tiny control ------------------ */
+/* ------------------ LOOPING AUTOPLAY MUSIC + button-only control ------------------ */
 const audio = document.getElementById('bgm');
 audio.src = ASSET_BASE + SONG;
-audio.volume = 0.0;   // fade in smoothly
-audio.loop = true;    // loop again when it ends
+audio.loop = true;
+audio.volume = 0.0;   // start low, fade up on success
 
-/* Fallback: if loop is ignored anywhere */
-audio.addEventListener('ended', ()=>{
-  try{ audio.currentTime = 0; audio.play(); }catch(e){}
-});
+const btn = document.getElementById('musicBtn');
 
-const btn   = document.getElementById('musicBtn');
-
-let fading = false;
+/* Try to autoplay on load. If blocked (iOS/Chrome policies), the button remains ▶ for manual start. */
 function fadeTo(target, ms=900){
-  if (fading) return;
-  fading = true;
   const start = performance.now();
   const from = audio.volume;
   function step(t){
     const k = Math.min(1, (t-start)/ms);
     audio.volume = from + (target - from) * k;
     if (k < 1) requestAnimationFrame(step);
-    else { audio.volume = target; fading = false; }
+    else audio.volume = target;
   }
   requestAnimationFrame(step);
 }
 
 async function attemptAutoplay(){
   try{
-    await audio.play();            // try autoplay
+    await audio.play();      // attempt autoplay
     fadeTo(1.0, 900);
     btn.textContent = '⏸';
   }catch(e){
-    btn.textContent = '▶';         // needs a tap
+    // Autoplay blocked—user can tap the tiny button to start. We do not bind any screen taps.
+    btn.textContent = '▶';
   }
 }
 
+/* Only the tiny button toggles playback */
 btn.addEventListener('click', async ()=>{
   try{
     if (audio.paused){
@@ -454,13 +394,19 @@ btn.addEventListener('click', async ()=>{
   }catch(e){}
 });
 
+/* Fallback loop in case some engines ignore the loop attribute */
+audio.addEventListener('ended', ()=>{
+  try{ audio.currentTime = 0; audio.play(); }catch(e){}
+});
+
+/* Run autoplay attempt as soon as possible */
 if (document.readyState === 'complete' || document.readyState === 'interactive'){
   attemptAutoplay();
 } else {
   document.addEventListener('DOMContentLoaded', attemptAutoplay);
 }
 
-/* Keep page locked to one screen (no scroll) */
+/* Keep the page to a single screen (no scroll) */
 window.addEventListener('touchmove', (e)=>{ e.preventDefault(); }, {passive:false});
 </script>
 </body>
