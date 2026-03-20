@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pendant Wall</title>
+<meta name="description" content="Five attached pendant frames with left gold heart & pinkish-gold chain, glassy flow, shimmer, parallax hearts, and autoplay music." />
+<style>
+  :root{
+    /* Sunset palette */
+    --sunset-1:#ff9a9e; --sunset-2:#fad0c4; --sunset-3:#fbc2eb; --sunset-4:#a18cd1;
+    --gold1:#ffe29a; --gold2:#ffbe5f; --gold3:#fff4c9;
+    --rose:#ff9cc5; /* pinkish tint */
+    --glass1:rgba(255,255,255,.28); --glass2:rgba(255,255,255,.12);
+    --shadow:0 18px 50px rgba(20,8,25,.30);
+    --ring-shadow:0 6px 14px rgba(20,8,25,.35);
+
+    /* Attached rows: no vertical gap */
+    --gap-y: 0;
+
+    /* Tiny outer padding (left/right) so chain/heart show slightly */
+    --pad-x: 10px;
+    --pad-top: 8px;
+    --pad-bottom: 60px; /* room for music pill */
+    --safe-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; color:#fff; overflow:hidden; /* single screen */
+    background:
+      radial-gradient(1200px 600px at 60% 20%, rgba(255,225,200,.35), transparent 60%),
+      linear-gradient(135deg, var(--sunset-1), var(--sunset-2) 38%, var(--sunset-3) 68%, var(--sunset-4));
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,"Noto Sans","Helvetica Neue",sans-serif;
+    -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
+  }
+
+  /* Warm grain for cinematic warmth */
+  .grain{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" /></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.05"/></svg>');
+    background-size:180px 180px; mix-blend-mode:soft-light;
+  }
+
+  /* Floating tiny hearts (behind content) */
+  .hearts{
+    position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden;
+    transform: translate3d(0,0,0);
+    transition: transform .08s linear; /* quick response for parallax */
+  }
+  .heart{
+    position:absolute; font-size:12px; opacity:.9;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));
+    animation:floatUp linear forwards;
+  }
+  @keyframes floatUp{
+    0%{ transform:translateY(0) translateX(0) scale(.9); opacity:0; }
+    5%{ opacity:.9; }
+    100%{ transform:translateY(-110vh) translateX(var(--drift,0)) scale(1.05); opacity:0; }
+  }
+
+  /* Full-screen 5-row wall (all visible at once, attached) */
+  .screen{
+    position:relative; z-index:2;
+    height:100dvh; width:100vw;
+    padding: var(--pad-top) var(--pad-x) calc(var(--pad-bottom) + var(--safe-bottom));
+    display:grid;
+    grid-template-rows: repeat(5, 1fr);  /* five equal-height rows */
+    gap: var(--gap-y);                    /* no gap between rows */
+  }
+
+  /* Pendant frame fills each grid row; overflow:visible so left bits show */
+  .pendant{
+    position:relative; width:100%; height:100%;
+    border-radius:0; /* attached edges look seamless */
+    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+    box-shadow:var(--shadow);
+    overflow:visible; /* important: show left heart/chain outside boundary */
+    isolation:isolate;
+  }
+
+  /* Gold bezel */
+  .pendant::before{
+    content:""; position:absolute; inset:0; border-radius:0; padding:2px;
+    background:linear-gradient(135deg, var(--gold1), var(--gold2));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite: exclude; z-index:5; pointer-events:none;
+  }
+
+  /* Photo */
+  .photo{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    filter: contrast(1.05) saturate(1.12) sepia(.05) hue-rotate(-6deg) brightness(1.03);
+    z-index:1;
+  }
+
+  /* --- GLASS COVER: reflective + gentle moving water feel --- */
+  .glass{
+    position:absolute; inset:0; z-index:2; pointer-events:none;
+    /* faint reflections */
+    background:
+      radial-gradient(120% 70% at -20% 0%, rgba(255,255,255,.16), rgba(255,255,255,0) 55%),
+      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    mix-blend-mode: screen;
+    /* very light backdrop refraction; subtle so photo stays visible */
+    backdrop-filter: blur(.6px) saturate(1.05) brightness(1.02);
+    -webkit-backdrop-filter: blur(.6px) saturate(1.05) brightness(1.02);
+    /* animated flowing mask */
+    -webkit-mask-image: radial-gradient(120px 80px at var(--mx,10%) var(--my,20%), rgba(0,0,0,.85), rgba(0,0,0,.7) 40%, rgba(0,0,0,.0) 75%);
+            mask-image: radial-gradient(120px 80px at var(--mx,10%) var(--my,20%), rgba(0,0,0,.85), rgba(0,0,0,.7) 40%, rgba(0,0,0,.0) 75%);
+    animation: glassDrift 9s ease-in-out infinite;
+  }
+  @keyframes glassDrift{
+    0%   { --mx: 8%;  --my: 18%; }
+    25%  { --mx: 25%; --my: 30%; }
+    50%  { --mx: 70%; --my: 22%; }
+    75%  { --mx: 42%; --my: 45%; }
+    100% { --mx: 8%;  --my: 18%; }
+  }
+
+  /* Shimmer sweep (subtle) */
+  .shimmer{
+    position:absolute; inset:-10% -20%;
+    background:
+      linear-gradient(75deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,.12) 45%,
+        rgba(255,245,200,.26) 50%,
+        rgba(255,255,255,.10) 55%,
+        rgba(255,255,255,0) 100%);
+    mix-blend-mode: screen;
+    filter: blur(0.2px) saturate(1.2);
+    z-index:3; pointer-events:none;
+    transform: translateX(-120%) rotate(8deg);
+    animation: sweep 7.8s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0%   { transform: translateX(-120%) rotate(8deg); opacity:.0; }
+    8%   { opacity:.7; }
+    18%  { opacity:.35; }
+    40%  { opacity:.0; }
+    60%  { opacity:.0; }
+    100% { transform: translateX(120%) rotate(8deg); opacity:.0; }
+  }
+
+  /* Soft bottom glow for depth */
+  .glow{
+    position:absolute; left:0; right:0; bottom:0; height:40%;
+    background:linear-gradient(180deg, transparent, rgba(0,0,0,.18), rgba(0,0,0,.28));
+    z-index:4; pointer-events:none;
+  }
+
+  /* >>> Left-side pendant bits: golden heart + pinkish-gold chain <<< */
+  /* Visible now because .pendant has overflow:visible and offsets adjusted */
+
+  /* Small golden heart sitting just outside the left edge */
+  .left-heart{
+    position:absolute; top:50%; left:-14px; transform:translateY(-50%) rotate(-12deg);
+    width:18px; height:16px; z-index:6; pointer-events:none;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,.3));
+  }
+  /* CSS heart: two circles + diamond, filled with gold gradient */
+  .left-heart::before,
+  .left-heart::after{
+    content:""; position:absolute; width:10px; height:10px; border-radius:50%;
+    background: radial-gradient(circle at 35% 35%, var(--gold3), var(--gold1) 55%, var(--gold2) 100%);
+    top:0;
+  }
+  .left-heart::before{ left:0; }
+  .left-heart::after{ right:0; }
+  .left-heart i{
+    position:absolute; left:50%; top:4px; transform:translateX(-50%) rotate(45deg);
+    width:10px; height:10px;
+    background: radial-gradient(circle at 40% 40%, var(--gold3), var(--gold1) 55%, var(--gold2) 100%);
+  }
+
+  /* Pinkish-gold chain that goes outward to the left (partially off-screen) */
+  .left-chain{
+    position:absolute; top:50%; left:-48px; transform:translateY(-50%) rotate(-18deg);
+    width:10px; height:90px; z-index:6; pointer-events:none;
+  }
+  .left-chain::before{
+    content:""; position:absolute; left:0; top:0; width:10px; height:10px; border-radius:50%;
+    background: radial-gradient(circle at 45% 45%, #ffe9f0, var(--rose) 55%, #ffb46b 100%);
+    box-shadow:
+      -16px  0   0 0 rgba(255,183,205,1),
+      -32px  0   0 0 rgba(255,183,205,1),
+      -48px  0   0 0 rgba(255,183,205,1),
+      -64px  0   0 0 rgba(255,183,205,1);
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
+  }
+
+  /* Music pill (only shown if autoplay is blocked) */
+  .music{
+    position:fixed; left:50%; bottom:max(10px, var(--safe-bottom));
+    transform:translateX(-50%);
+    display:none; align-items:center; gap:10px;
+    padding:10px 14px; border-radius:999px; z-index:7;
+    background:linear-gradient(180deg, var(--glass1), var(--glass2));
+    border:1px solid rgba(255,255,255,.5);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    box-shadow:0 14px 40px rgba(0,0,0,.28);
+    user-select:none;
+  }
+  .music.show{ display:flex; }
+  .music button{
+    appearance:none; border:0; cursor:pointer;
+    background: radial-gradient(circle at 30% 30%, #ff87bd, #ff5fa2 60%, #f3429d 100%);
+    color:#fff; font-weight:900; letter-spacing:.3px;
+    padding:8px 14px; border-radius:999px;
+    box-shadow:0 10px 24px rgba(243,66,157,.45);
+  }
+  .music .hint{ font-size:12px; font-weight:700; opacity:.95; }
+
+  /* Minor tweaks on very small widths */
+  @media (max-width:430px){
+    .screen{ padding: var(--pad-top) var(--pad-x) calc(56px + var(--safe-bottom)); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Subtle film grain -->
+<div class="grain" aria-hidden="true"></div>
+
+<!-- Floating tiny hearts -->
+<div class="hearts" aria-hidden="true"></div>
+
+<!-- 5 attached pendants -->
+<section class="screen" id="screen"></section>
+
+<!-- Music prompt (only if autoplay is blocked) -->
+<div class="music" id="music">
+  <button id="musicBtn" type="button">Play</button>
+  <span class="hint">tap to start music</span>
+</div>
+
+<!-- Background music (auto-play attempt) -->
+<audio id="bgm" preload="auto" playsinline loop crossOrigin="anonymous" style="display:none"></audio>
+
+<script>
+/* -------------------- CONFIG -------------------- */
+const ASSET_BASE = '';
+// Example for GitHub RAW:
+// const ASSET_BASE = 'https://raw.githubusercontent.com/<user>/<repo>/<branch>/folder/';
+
+const IMAGES = ['Image_1.jpg','Image_2.jpg','Image_3.jpg','Image_4.jpg','Image_5.jpg'];
+const SONG   = 'song.mp3';
+
+/* -------------------- BUILD GRID -------------------- */
+const screenEl = document.getElementById('screen');
+
+IMAGES.forEach((file, idx) => {
+  const card = document.createElement('article');
+  card.className = 'pendant';
+
+  const img = document.createElement('img');
+  img.className = 'photo';
+  img.alt = 'Photo';
+  img.loading = 'eager';        // eager so all are visible immediately
+  img.decoding = 'async';
+  img.src = ASSET_BASE + file;
+
+  // Layers: image -> glass -> shimmer -> glow -> bezel (::before)
+  const glass = document.createElement('div'); glass.className = 'glass';
+  const shimmer = document.createElement('div'); shimmer.className = 'shimmer';
+  shimmer.style.animationDelay = (idx * 1.2) + 's';
+  const glow = document.createElement('div'); glow.className = 'glow';
+
+  // Left heart & chain (outside boundary)
+  const heart = document.createElement('div'); heart.className = 'left-heart';
+  const heartDiamond = document.createElement('i'); heart.appendChild(heartDiamond);
+  const chain= document.createElement('div'); chain.className = 'left-chain';
+
+  card.appendChild(img);
+  card.appendChild(glass);
+  card.appendChild(shimmer);
+  card.appendChild(glow);
+  card.appendChild(heart);
+  card.appendChild(chain);
+
+  screenEl.appendChild(card);
+});
+
+/* ----------------- FLOATING HEARTS + PARALLAX ------------------ */
+const heartsLayer = document.querySelector('.hearts');
+const prefersReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function spawnHeart(){
+  const h = document.createElement('div');
+  h.className = 'heart';
+  h.textContent = Math.random() < 0.65 ? '💗' : '💖';
+  const startX = Math.random() * innerWidth;
+  const size   = 10 + Math.random()*8;
+  const dur    = 7 + Math.random()*6;
+  const drift  = (Math.random()*70 - 35) + 'px';
+  h.style.left = Math.max(4, Math.min(innerWidth - 24, startX)) + 'px';
+  h.style.bottom = '-22px';
+  h.style.fontSize = size + 'px';
+  h.style.setProperty('--drift', drift);
+  h.style.animationDuration = dur + 's';
+  heartsLayer.appendChild(h);
+  setTimeout(()=> h.remove(), dur*1000);
+}
+let heartTimer = null;
+function startHearts(){
+  if (heartTimer) return;
+  const rate = prefersReduced ? 650 : 420;
+  for (let i=0;i<10;i++) setTimeout(spawnHeart, i*180);
+  heartTimer = setInterval(spawnHeart, rate);
+}
+startHearts();
+
+// Parallax: slight layer shift by pointer / device tilt
+(function(){
+  let tx = 0, ty = 0; // target offsets
+  let cx = innerWidth/2, cy = innerHeight/2;
+
+  function apply(){
+    // very subtle (±6px max)
+    const px = Math.max(-6, Math.min(6, tx));
+    const py = Math.max(-6, Math.min(6, ty));
+    heartsLayer.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+    requestAnimationFrame(apply);
+  }
+  requestAnimationFrame(apply);
+
+  window.addEventListener('pointermove', (e)=>{
+    cx = innerWidth/2; cy = innerHeight/2;
+    const nx = (e.clientX - cx) / cx; // -1..1
+    const ny = (e.clientY - cy) / cy; // -1..1
+    tx = nx * 6; ty = ny * 6;
+  }, {passive:true});
+
+  window.addEventListener('deviceorientation', (e)=>{
+    if (typeof e.gamma !== 'number' || typeof e.beta !== 'number') return;
+    const nx = (e.gamma || 0) / 30;
+    const ny = (e.beta  || 0) / 30;
+    tx = nx * 6; ty = ny * 6;
+  }, {passive:true});
+})();
+
+/* ------------------ AUTOPLAY MUSIC ------------------ */
+const audio = document.getElementById('bgm');
+audio.src = ASSET_BASE + SONG;
+audio.volume = 0.0;  // fade in smoothly
+
+const pill  = document.getElementById('music');
+const btn   = document.getElementById('musicBtn');
+
+let fading = false;
+function fadeTo(target, ms=900){
+  if (fading) return;
+  fading = true;
+  const start = performance.now();
+  const from = audio.volume;
+  function step(t){
+    const k = Math.min(1, (t-start)/ms);
+    audio.volume = from + (target - from) * k;
+    if (k < 1) requestAnimationFrame(step);
+    else { audio.volume = target; fading = false; }
+  }
+  requestAnimationFrame(step);
+}
+
+async function attemptAutoplay(){
+  try{
+    await audio.play();            // try autoplay
+    fadeTo(1.0, 1000);
+    pill.classList.remove('show'); // success -> hide prompt
+  }catch(e){
+    // blocked -> show small pill
+    pill.classList.add('show');
+  }
+}
+btn.addEventListener('click', async ()=>{
+  try{
+    if (audio.paused) await audio.play();
+    fadeTo(1.0, 800);
+    pill.classList.remove('show');
+  }catch(e){}
+});
+
+// Try right away after DOM is ready
+if (document.readyState === 'complete' || document.readyState === 'interactive'){
+  attemptAutoplay();
+} else {
+  document.addEventListener('DOMContentLoaded', attemptAutoplay);
+}
+
+// Best-effort resume when returning to tab
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden) return;
+  if (!audio.paused){
+    audio.play().catch(()=>{ pill.classList.add('show'); });
+  }
+});
+
+/* ------------------ FIT & SAFETY ------------------ */
+/* Lock scroll so the 5-row wall always fills the screen */
+window.addEventListener('touchmove', (e)=>{ e.preventDefault(); }, {passive:false});
+</script>
+</body>
+</html>
