@@ -235,7 +235,7 @@
 </div>
 
 <!-- Looping background music -->
-<audio id="bgm" preload="auto" playsinline loop crossOrigin="anonymous" style="display:none"></audio>
+<audio id="bgm" preload="auto" playsinline loop autoplay crossOrigin="anonymous" style="display:none"></audio>
 
 <script>
 /* -------------------- CONFIG -------------------- */
@@ -248,7 +248,7 @@ const SONG   = 'song.mp3';
 /* -------------------- BUILD GRID -------------------- */
 const screenEl = document.getElementById('screen');
 
-IMAGES.forEach((file, idx) => {
+IMAGES.forEach((file) => {
   const card = document.createElement('article');
   card.className = 'pendant';
 
@@ -347,15 +347,15 @@ startHearts();
   }, {passive:true});
 })();
 
-/* ------------------ LOOPING AUTOPLAY MUSIC + button-only control ------------------ */
+/* ------------------ LOOPING AUTOPLAY MUSIC + button-only pause ------------------ */
 const audio = document.getElementById('bgm');
 audio.src = ASSET_BASE + SONG;
 audio.loop = true;
-audio.volume = 0.0;   // start low, fade up on success
+audio.volume = 0.0;   // start low; fade up on success
 
 const btn = document.getElementById('musicBtn');
+let userPaused = false;  // only the button sets this to true
 
-/* Try to autoplay on load. If blocked (iOS/Chrome policies), the button remains ▶ for manual start. */
 function fadeTo(target, ms=900){
   const start = performance.now();
   const from = audio.volume;
@@ -368,35 +368,70 @@ function fadeTo(target, ms=900){
   requestAnimationFrame(step);
 }
 
-async function attemptAutoplay(){
+/* Aggressive autoplay attempts on load/refresh */
+async function tryPlay(tag){
   try{
-    await audio.play();      // attempt autoplay
+    await audio.play();
     fadeTo(1.0, 900);
     btn.textContent = '⏸';
+    return true;
   }catch(e){
-    // Autoplay blocked—user can tap the tiny button to start. We do not bind any screen taps.
-    btn.textContent = '▶';
+    return false;
   }
+}
+
+async function attemptAutoplay(){
+  // Try immediately
+  if (await tryPlay('immediate')) return;
+
+  // Retry a few times quickly (helps when audio buffer finishes loading just after DOM)
+  let tries = 0;
+  const maxTries = 5;
+  const timer = setInterval(async ()=>{
+    if (await tryPlay('retry-'+tries)) { clearInterval(timer); }
+    if (++tries >= maxTries) clearInterval(timer);
+  }, 450);
+
+  // As a safety net, also try when the tab becomes visible or the page is shown
+  const vis = async ()=>{ if (!userPaused && audio.paused) await tryPlay('visibility'); };
+  document.addEventListener('visibilitychange', vis);
+  window.addEventListener('pageshow', vis, { once:false });
+  window.addEventListener('focus', vis);
+
+  // And on the first user gesture, try to start (only start; we never pause on gestures)
+  const onceStart = async ()=>{
+    if (!userPaused && audio.paused) await tryPlay('gesture');
+    window.removeEventListener('pointerdown', onceStart);
+    window.removeEventListener('touchstart', onceStart);
+    window.removeEventListener('keydown', onceStart);
+  };
+  window.addEventListener('pointerdown', onceStart, { passive:true });
+  window.addEventListener('touchstart',  onceStart, { passive:true });
+  window.addEventListener('keydown',     onceStart);
 }
 
 /* Only the tiny button toggles playback */
 btn.addEventListener('click', async ()=>{
   try{
     if (audio.paused){
+      userPaused = false;
       await audio.play();
       fadeTo(1.0, 600);
       btn.textContent = '⏸';
     }else{
-      fadeTo(0.0, 400);
-      setTimeout(()=>{ try{ audio.pause(); }catch(e){} }, 420);
+      userPaused = true;
+      fadeTo(0.0, 350);
+      setTimeout(()=>{ try{ audio.pause(); }catch(e){} }, 360);
       btn.textContent = '▶';
     }
   }catch(e){}
 });
 
 /* Fallback loop in case some engines ignore the loop attribute */
-audio.addEventListener('ended', ()=>{
-  try{ audio.currentTime = 0; audio.play(); }catch(e){}
+audio.addEventListener('ended', async ()=>{
+  if (!userPaused){
+    try{ audio.currentTime = 0; await audio.play(); }catch(e){}
+  }
 });
 
 /* Run autoplay attempt as soon as possible */
