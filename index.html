@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pendant Wall</title>
-<meta name="description" content="Five attached pendant frames with a tilted gold heart, calm glass flow, floating hearts, and looping music that autoplays with sound. Portrait shows a rotate prompt." />
+<meta name="description" content="Five attached pendant frames with a tilted gold heart, calm glass flow, floating hearts, and looping music with a tiny bottom-right button. Portrait shows a rotate prompt." />
 <style>
   :root{
     /* Sunset palette */
@@ -19,16 +19,19 @@
 
     --shadow:0 18px 50px rgba(20,8,25,.30);
 
-    /* No vertical gap between rows (they touch) */
+    /* Attached rows: no vertical gap */
     --gap-y: 0;
 
     /* Uniform margins (same on all sides) */
-    --pad-x: 18px;
-    --pad-y: var(--pad-x);
+    --pad-x: 18px;           /* left & right */
+    --pad-y: var(--pad-x);   /* top & bottom = sides */
 
     /* Heart placement (tilted, pinned on boundary) */
     --heart-tipY: 50%;
     --heart-nudge-x: -1px;
+
+    /* Button size */
+    --music-size: 32px;
   }
 
   *{ box-sizing:border-box; }
@@ -49,7 +52,7 @@
     background-size:180px 180px; mix-blend-mode:soft-light;
   }
 
-  /* Floating hearts (over frames) */
+  /* Floating hearts OVER the frames */
   .hearts{
     position:fixed; inset:0; z-index:12; pointer-events:none; overflow:hidden;
     transform: translate3d(0,0,0);
@@ -76,7 +79,7 @@
     gap: var(--gap-y);
   }
 
-  /* Frame */
+  /* Frame (no radius -> rows attach seamlessly) */
   .pendant{
     position:relative; width:100%; height:100%;
     border-radius:0;
@@ -103,7 +106,7 @@
     z-index:1;
   }
 
-  /* Calm glass water flow (single pattern) */
+  /* Calm GLASS flow (single, slow pattern) */
   .glass{
     position:absolute; inset:0; z-index:6; pointer-events:none;
     background:
@@ -145,10 +148,9 @@
   .heart-pin{
     position:absolute;
     top: var(--heart-tipY);
-    left: 0;                 /* attach to the left frame edge */
+    left: 0;
     transform: translate(var(--heart-nudge-x), -50%);
-    z-index:10;              /* above glass/bezel */
-    pointer-events:none;
+    z-index:10; pointer-events:none;
   }
   .gold-heart{
     position:absolute;
@@ -156,32 +158,57 @@
     width: 22px; height: 20px;
     transform-box: fill-box;
     transform-origin: 50% 90%;
-    transform: translate(-10px, -18px) rotate(-12deg); /* slight tilt */
+    transform: translate(-10px, -18px) rotate(-12deg);
     filter: drop-shadow(0 3px 6px rgba(0,0,0,.3));
   }
 
-  /* Portrait: show rotate prompt; hide gallery to avoid cropping */
+  /* Tiny bottom-right Play/Pause + hint */
+  .music{
+    position:fixed;
+    right:max(8px, env(safe-area-inset-right, 8px));
+    bottom:max(8px, env(safe-area-inset-bottom, 8px));
+    z-index:30;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .music button{
+    width: var(--music-size); height: var(--music-size);
+    appearance:none; border:1px solid rgba(255,255,255,.55);
+    background: linear-gradient(180deg, var(--glass1), var(--glass2));
+    color:#fff; font-size:13px; font-weight:900; line-height:1;
+    border-radius:999px; cursor:pointer;
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    box-shadow:0 8px 20px rgba(0,0,0,.28);
+  }
+  .music .hint{
+    font-size:10px; line-height:1;
+    color:#fff; opacity:.9; letter-spacing:.2px;
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  @media (max-width:430px){
+    .music button{ width:30px; height:30px; font-size:12px; }
+  }
+
+  /* Portrait safeguard: rotate overlay */
   .rotate-overlay{
     position:fixed; inset:0; z-index:40; display:none;
     align-items:center; justify-content:center; flex-direction:column;
     gap:12px; color:#fff;
     background: linear-gradient(135deg, rgba(0,0,0,.35), rgba(0,0,0,.25));
-    text-align:center; padding: 24px;
+    text-align:center; padding:24px;
     font-weight:800; letter-spacing:.3px;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
-  .rotate-overlay .icon{
-    font-size: 36px; line-height:1; opacity:.9;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,.4));
-  }
-  .rotate-overlay .hint{
-    font-size: 14px; opacity:.95;
-  }
+  .rotate-overlay .icon{ font-size:36px; line-height:1; opacity:.9;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.4)); }
+  .rotate-overlay .hint{ font-size:14px; opacity:.95; }
+
   @media (orientation: portrait){
     .rotate-overlay{ display:flex; }
     .screen{ display:none; }
     .hearts{ display:none; }
+    .music{ display:none; }
   }
 </style>
 </head>
@@ -195,13 +222,19 @@
 <!-- 5 attached pendants -->
 <section class="screen" id="screen"></section>
 
+<!-- Tiny bottom-right music button + small hint -->
+<div class="music" id="music">
+  <button id="musicBtn" type="button" aria-label="Play/Pause">⏸</button>
+  <small class="hint" id="musicHint">tap to play</small>
+</div>
+
 <!-- Rotate prompt in portrait -->
 <div class="rotate-overlay" id="rotate">
   <div class="icon">🔁📱</div>
   <div class="hint">Meera, phn ghooma landscape mode m aur volume bada</div>
 </div>
 
-<!-- Looping background music: autoplay with sound -->
+<!-- Looping background music (sound on) -->
 <audio id="bgm" preload="auto" playsinline loop autoplay crossOrigin="anonymous" style="display:none"></audio>
 
 <script>
@@ -284,7 +317,7 @@ function startHearts(){
 }
 startHearts();
 
-// Parallax layer shift (pointer / device tilt)
+// Parallax: slight shift by pointer / device tilt
 (function(){
   let tx = 0, ty = 0;
   function apply(){
@@ -310,63 +343,89 @@ startHearts();
   }, {passive:true});
 })();
 
-/* ------------------ LOOPING AUTOPLAY MUSIC (sound on; no pause UI) ------------------ */
+/* ------------------ LOOPING AUTOPLAY MUSIC (sound on) ------------------ */
 const audio = document.getElementById('bgm');
 audio.src    = ASSET_BASE + SONG;
 audio.loop   = true;
 audio.volume = 1.0;
 audio.muted  = false;
 
-/* try to play with sound */
-async function playNow(){ try{ await audio.play(); return true; }catch{ return false; } }
+const btn  = document.getElementById('musicBtn');
+const hint = document.getElementById('musicHint');
+let userPaused = false;   // only the button can set this
+
+function isAudible(){
+  return !audio.paused && !audio.muted && (audio.volume > 0.01);
+}
+function setUI(){
+  btn.textContent = isAudible() ? '⏸' : '▶';
+  hint.style.opacity = isAudible() ? 0.4 : 1.0;
+}
 
 /* Strong autoplay attempts:
    - immediate with sound
    - short retry loop
-   - visibility/focus recovery
-   - one-time first gesture (start only; never pause)
+   - ensure on visibility/focus
+   - ANY tap/scroll/key → starts if blocked (NEVER pauses)
 */
-async function enforceAutoplaySound(){
-  // 1) Immediate attempt
-  await playNow();
+async function playNow(){ try{ await audio.play(); return true; }catch{ return false; } }
 
-  // 2) Short retry loop
+async function enforceAutoplaySound(){
+  // Immediate attempts
+  playNow();
+  requestAnimationFrame(playNow);
+  setTimeout(playNow, 120);
+  setTimeout(playNow, 360);
+  setTimeout(playNow, 720);
+
+  // Short retry loop (helps right after decode)
   let tries = 0, maxTries = 8;
   const timer = setInterval(async ()=>{
-    if (audio.paused){
-      if (await playNow()) { clearInterval(timer); }
+    if (!userPaused && audio.paused){
+      if (await playNow()){ clearInterval(timer); }
     } else {
       clearInterval(timer);
     }
     if (++tries >= maxTries) clearInterval(timer);
   }, 350);
 
-  // 3) Visibility/focus hooks (never pause)
+  // Keep UI in sync
+  ['playing','pause','volumechange','loadeddata','canplay','canplaythrough','stalled','suspend','abort']
+    .forEach(ev => audio.addEventListener(ev, setUI));
+
+  // Visibility/focus recovery (never pause)
   const vis = async ()=>{
+    if (userPaused) return;
     if (audio.paused){ await playNow(); }
   };
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) vis(); });
   window.addEventListener('pageshow', vis);
   window.addEventListener('focus', vis);
 
-  // 4) First user gesture (one-time) → start if still blocked; NEVER pauses
-  const onceStart = async ()=>{
-    if (audio.paused){ await playNow(); }
-    window.removeEventListener('pointerdown', onceStart);
-    window.removeEventListener('touchstart', onceStart);
-    window.removeEventListener('keydown', onceStart);
-  };
-  window.addEventListener('pointerdown', onceStart, { passive:true });
-  window.addEventListener('touchstart',  onceStart, { passive:true });
-  window.addEventListener('keydown',     onceStart);
+  // ANY gesture → start if blocked; NEVER pauses
+  const resumeIfBlocked = async ()=>{ if(!userPaused && audio.paused){ await playNow(); } };
+  ['pointerdown','touchstart','keydown','wheel'].forEach(evt=>{
+    window.addEventListener(evt, resumeIfBlocked, {passive:true});
+  });
+
+  setUI();
 }
 
-/* Loop fallback */
-audio.addEventListener('ended', async ()=>{
-  try{ audio.currentTime = 0; await audio.play(); }catch{}
+// BUTTON is the ONLY pause/resume control
+btn.addEventListener('click', async ()=>{
+  try{
+    if (isAudible()){
+      userPaused = true;
+      audio.pause();
+    }else{
+      userPaused = false;
+      await playNow();
+    }
+  }catch(e){}
+  setUI();
 });
 
-/* Build & kick attempts ASAP */
+/* Kick attempts ASAP */
 if (document.readyState === 'complete' || document.readyState === 'interactive'){
   enforceAutoplaySound();
 } else {
